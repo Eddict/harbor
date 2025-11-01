@@ -27,9 +27,9 @@ on:
         description: 'Image tag to use when pushing (if empty on workflow_dispatch, defaults to latest; on push events uses commit SHA)'
         required: false
         default: ''
-#   push:
-#     branches:
-#       - main
+  push:
+    branches:
+      - main
 
 jobs:
   build:
