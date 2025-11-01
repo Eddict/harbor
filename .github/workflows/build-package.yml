@@ -7,6 +7,8 @@ on:
     branches:
       - main
       - release-*
+    paths-ignore:
+      - '.github/workflows/build-prepare.yml'
 
 jobs:
   BUILD_PACKAGE:

@@ -28,6 +28,7 @@ on:
       - '!tests/resources/**'
       - '!tests/robot-cases/**'
       - '!tests/robot-cases/Group1-Nightly/**'
+      - '.github/workflows/build-prepare.yml'
   push:
     # the paths-ignore is the same as the paths in pass-CI.yml, they should be synced together
     paths-ignore:
@@ -40,6 +41,7 @@ on:
       - '!tests/resources/**'
       - '!tests/robot-cases/**'
       - '!tests/robot-cases/Group1-Nightly/**'
+      - '.github/workflows/build-prepare.yml'
 
 jobs:
   UTTEST:
