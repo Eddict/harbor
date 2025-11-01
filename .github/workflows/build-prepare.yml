@@ -105,14 +105,7 @@ jobs:
           echo "base_namespace=$base_namespace" >> $GITHUB_OUTPUT
           echo "base_image_name=$base_image_name" >> $GITHUB_OUTPUT
 
-      - name: Build & push base image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: make/photon/prepare/Dockerfile.base
-          platforms: linux/amd64
-          push: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.push == 'true') }}
-          tags: ${{ steps.build_args.outputs.base_image_name }}:${{ steps.build_args.outputs.base_version }}
+      
 
       - name: Log in to GHCR (if pushing to GHCR)
         if: ${{ (github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.push == 'true') }} && (github.event_name != 'workflow_dispatch' || github.event.inputs.registry == 'ghcr' || github.event.inputs.registry == '')
@@ -138,6 +131,15 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
+      - name: Build & push base image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: make/photon/prepare/Dockerfile.base
+          platforms: linux/amd64
+          push: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.push == 'true') }}
+          tags: ${{ steps.build_args.outputs.base_image_name }}:${{ steps.build_args.outputs.base_version }}
+  
       - name: Build (and optionally push) the prepare image
         uses: docker/build-push-action@v4
         with:
