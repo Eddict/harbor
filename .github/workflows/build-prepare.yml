@@ -1,35 +1,11 @@
-name: Build and (optionally) Push prepare image
+name: Build and Push prepare image
 
-permissions:
-  contents: read
-  packages: write
+# permissions:
+#   contents: read
+#   packages: write
 
 on:
   workflow_dispatch:
-#     inputs:
-#       push:
-#         description: 'Whether to push the built image to a registry (true/false)'
-#         required: false
-#         default: 'false'
-#       registry:
-#         description: 'Registry to push to: ghcr (default) or docker or other'
-#         required: false
-#         default: 'ghcr'
-#       registry_host:
-#         description: 'When registry=other, set the registry host (e.g. myregistry.example.com)'
-#         required: false
-#         default: ''
-#       image_name:
-#         description: 'Optional image name (including namespace). If empty, defaults to ghcr.io/<owner>/prepare when registry=ghcr'
-#         required: false
-#         default: ''
-#       image_tag:
-#         description: 'Image tag to use when pushing (if empty on workflow_dispatch, defaults to latest; on push events uses commit SHA)'
-#         required: false
-#         default: ''
-#   push:
-#     branches:
-#       - main
 
 jobs:
   build:
@@ -45,28 +21,8 @@ jobs:
       - name: Compose image name and tag
         id: vars
         run: |
-          # image_name: priority: workflow input image_name > inferred ghcr name > default '<repository_owner>/prepare'
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.image_name }}" ]; then
-            image_name="${{ github.event.inputs.image_name }}"
-          else
-            if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.registry }}" = "docker" ] && [ -n "${{ github.event.inputs.registry_host }}" ]; then
-              image_name="${{ github.event.inputs.registry_host }}/${{ github.repository_owner }}/prepare"
-            else
-              # default to GHCR
-              image_name="ghcr.io/${{ github.repository_owner }}/prepare"
-            fi
-          fi
-
-          # image_tag: workflow input > on push use sha > default 'latest'
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.image_tag }}" ]; then
-            image_tag="${{ github.event.inputs.image_tag }}"
-          else
-            if [ "${{ github.event_name }}" = "push" ]; then
-              image_tag="${{ github.sha }}"
-            else
-              image_tag="latest"
-            fi
-          fi
+          image_name="ghcr.io/${{ github.repository_owner }}/prepare"
+          image_tag="latest"
 
           # Docker/OCI repository names must be lowercase. Normalize the image
           # name to lowercase to avoid build errors.
@@ -95,13 +51,7 @@ jobs:
           base_namespace_lc=$(echo "$base_namespace" | tr '[:upper:]' '[:lower:]')
           base_namespace="$base_namespace_lc"
 
-          # base image name depends on selected registry
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.registry }}" = "docker" ] && [ -n "${{ github.event.inputs.registry_host }}" ]; then
-            base_namespace="${{ github.event.inputs.registry_host }}/${base_namespace}"
-          else
-            # default to GHCR
-            base_namespace="ghcr.io/${base_namespace}"
-          fi
+          base_namespace="ghcr.io/${base_namespace}"
           base_image_name="${base_namespace}/harbor-prepare-base"
 
           # normalize to lowercase for Docker repo naming rules
@@ -115,29 +65,12 @@ jobs:
           echo "base_namespace=$base_namespace" >> $GITHUB_OUTPUT
           echo "base_image_name=$base_image_name" >> $GITHUB_OUTPUT
    
-      - name: Log in to GHCR (if pushing to GHCR)
-        if: ${{ (github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.push == 'true') }} && (github.event_name != 'workflow_dispatch' || github.event.inputs.registry == 'ghcr' || github.event.inputs.registry == '')
+      - name: Log in to GHCR
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Log in to Docker Hub (if pushing to docker)
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.push == 'true' && github.event.inputs.registry == 'docker' }}
-        uses: docker/login-action@v2
-        with:
-          registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-      - name: Log in to other registry (if pushing to other)
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.push == 'true' && github.event.inputs.registry == 'other' }}
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ github.event.inputs.registry_host }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: Build & push base image
         uses: docker/build-push-action@v4
@@ -145,7 +78,7 @@ jobs:
           context: .
           file: make/photon/prepare/Dockerfile.base
           platforms: linux/amd64
-          push: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.push == 'true') }}
+          push: true
           tags: ${{ steps.build_args.outputs.base_image_name }}:${{ steps.build_args.outputs.base_version }}
   
       - name: Build (and optionally push) the prepare image
@@ -154,7 +87,7 @@ jobs:
           context: .
           file: make/photon/prepare/Dockerfile
           platforms: linux/amd64
-          push: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.push == 'true') }}
+          push: true
           tags: ${{ steps.vars.outputs.image_name }}:${{ steps.build_args.outputs.base_version }}
           build-args: |
             harbor_base_image_version=${{ steps.build_args.outputs.base_version }}
@@ -162,9 +95,5 @@ jobs:
 
       - name: Show result
         run: |
-          if [ "${{ github.event_name }}" = "push" ] || ( [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.push }}" = "true" ] ); then
-            echo "Built and pushed image: ${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.image_tag }}"
-          else
-            echo "Built image locally: ${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.image_tag }}"
-          fi
+          echo "Built and pushed image: ${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.image_tag }}"
 
