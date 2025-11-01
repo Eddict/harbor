@@ -6,30 +6,30 @@ permissions:
 
 on:
   workflow_dispatch:
-    inputs:
-      push:
-        description: 'Whether to push the built image to a registry (true/false)'
-        required: false
-        default: 'false'
-      registry:
-        description: 'Registry to push to: ghcr (default) or docker or other'
-        required: false
-        default: 'ghcr'
-      registry_host:
-        description: 'When registry=other, set the registry host (e.g. myregistry.example.com)'
-        required: false
-        default: ''
-      image_name:
-        description: 'Optional image name (including namespace). If empty, defaults to ghcr.io/<owner>/prepare when registry=ghcr'
-        required: false
-        default: ''
-      image_tag:
-        description: 'Image tag to use when pushing (if empty on workflow_dispatch, defaults to latest; on push events uses commit SHA)'
-        required: false
-        default: ''
-  push:
-    branches:
-      - main
+#     inputs:
+#       push:
+#         description: 'Whether to push the built image to a registry (true/false)'
+#         required: false
+#         default: 'false'
+#       registry:
+#         description: 'Registry to push to: ghcr (default) or docker or other'
+#         required: false
+#         default: 'ghcr'
+#       registry_host:
+#         description: 'When registry=other, set the registry host (e.g. myregistry.example.com)'
+#         required: false
+#         default: ''
+#       image_name:
+#         description: 'Optional image name (including namespace). If empty, defaults to ghcr.io/<owner>/prepare when registry=ghcr'
+#         required: false
+#         default: ''
+#       image_tag:
+#         description: 'Image tag to use when pushing (if empty on workflow_dispatch, defaults to latest; on push events uses commit SHA)'
+#         required: false
+#         default: ''
+#   push:
+#     branches:
+#       - main
 
 jobs:
   build:
