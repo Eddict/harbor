@@ -11,6 +11,16 @@ fi
 
 CA_KEY="harbor_internal_ca.key"
 CA_CRT="harbor_internal_ca.crt"
+CA_PP="harbor_internal_ca.pp"
+
+# If a passphrase file exists in the current folder, set PASSIN to use
+# openssl's file: form. Otherwise leave PASSIN empty so behavior is unchanged.
+if [[ -f "$CA_PP" ]]; then
+        PASSIN="-passin file:$CA_PP"
+        echo "Found CA passphrase file $CA_PP, will use it for signing commands"
+else
+        PASSIN=""
+fi
 
 # CA key and certificate
 if [[ ! -f $CA_KEY && ! -f $CA_CRT ]]; then
@@ -29,7 +39,7 @@ openssl req -new -newkey rsa:4096 -nodes -sha256 \
 
 # Sign proxy
 echo subjectAltName = DNS.1:proxy > extfile.cnf
-openssl x509 -req -days $DAYS -sha256 -in proxy.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key -CAcreateserial -extfile extfile.cnf -out proxy.crt
+openssl x509 -req -days $DAYS -sha256 -in proxy.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key $PASSIN -CAcreateserial -extfile extfile.cnf -out proxy.crt
 
 # generate portal key and csr
 openssl req -new -newkey rsa:4096 -nodes -sha256 \
@@ -39,7 +49,7 @@ openssl req -new -newkey rsa:4096 -nodes -sha256 \
 
 # Sign portal
 echo subjectAltName = DNS.1:portal > extfile.cnf
-openssl x509 -req -days $DAYS -sha256 -in portal.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key -CAcreateserial -extfile extfile.cnf -out portal.crt
+openssl x509 -req -days $DAYS -sha256 -in portal.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key $PASSIN -CAcreateserial -extfile extfile.cnf -out portal.crt
 
 # generate core key and csr
 openssl req -new \
@@ -49,7 +59,7 @@ openssl req -new \
 
 # Sign core csr with CA certificate and key
 echo subjectAltName = DNS.1:core > extfile.cnf
-openssl x509 -req -days $DAYS -sha256 -in core.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key -CAcreateserial -extfile extfile.cnf -out core.crt
+openssl x509 -req -days $DAYS -sha256 -in core.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key $PASSIN -CAcreateserial -extfile extfile.cnf -out core.crt
 
 
 # job_service key
@@ -60,7 +70,7 @@ openssl req -new \
 
 # sign job_service csr with CA certificate and key
 echo subjectAltName = DNS.1:jobservice > extfile.cnf
-openssl x509 -req -days $DAYS -sha256 -in job_service.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key -CAcreateserial -extfile extfile.cnf -out job_service.crt
+openssl x509 -req -days $DAYS -sha256 -in job_service.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key $PASSIN -CAcreateserial -extfile extfile.cnf -out job_service.crt
 
 # generate registry key
 openssl req -new \
@@ -70,7 +80,7 @@ openssl req -new \
 
 # sign registry csr with CA certificate and key
 echo subjectAltName = DNS.1:registry > extfile.cnf
-openssl x509 -req -days $DAYS -sha256 -in registry.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key -CAcreateserial -extfile extfile.cnf -out registry.crt
+openssl x509 -req -days $DAYS -sha256 -in registry.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key $PASSIN -CAcreateserial -extfile extfile.cnf -out registry.crt
 
 # generate registryctl key
 openssl req -new \
@@ -80,7 +90,7 @@ openssl req -new \
 
 # sign registryctl csr with CA certificate and key
 echo subjectAltName = DNS.1:registryctl > extfile.cnf
-openssl x509 -req -days $DAYS -sha256 -in registryctl.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key -CAcreateserial -extfile extfile.cnf -out registryctl.crt
+openssl x509 -req -days $DAYS -sha256 -in registryctl.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key $PASSIN -CAcreateserial -extfile extfile.cnf -out registryctl.crt
 
 
 # generate trivy_adapter key
@@ -91,7 +101,7 @@ openssl req -new \
 
 # sign trivy_adapter csr with CA certificate and key
 echo subjectAltName = DNS.1:trivy-adapter > extfile.cnf
-openssl x509 -req -days $DAYS -sha256 -in trivy_adapter.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key -CAcreateserial -extfile extfile.cnf -out trivy_adapter.crt
+openssl x509 -req -days $DAYS -sha256 -in trivy_adapter.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key $PASSIN -CAcreateserial -extfile extfile.cnf -out trivy_adapter.crt
 
 
 # generate harbor_db key
@@ -102,4 +112,4 @@ openssl req -new \
 
 # sign harbor_db csr with CA certificate and key
 echo subjectAltName = DNS.1:harbor_db > extfile.cnf
-openssl x509 -req -days $DAYS -sha256 -in harbor_db.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key -CAcreateserial -extfile extfile.cnf -out harbor_db.crt
+openssl x509 -req -days $DAYS -sha256 -in harbor_db.csr -CA harbor_internal_ca.crt -CAkey harbor_internal_ca.key $PASSIN -CAcreateserial -extfile extfile.cnf -out harbor_db.crt
