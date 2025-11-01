@@ -60,13 +60,6 @@ jobs:
           base_namespace="ghcr.io/$base_namespace"
           base_image_name="$base_namespace/harbor-prepare-base"
 
-          # normalize to lowercase for Docker repo naming rules
-          base_image_name_lc=$(echo "$base_image_name" | tr '[:upper:]' '[:lower:]')
-          base_image_name="$base_image_name_lc"
-
-          echo "base_version=$base_version"
-          echo "base_namespace=$base_namespace"
-          echo "base_image_name=$base_image_name"
           echo "base_version=$base_version" >> $GITHUB_OUTPUT
           echo "base_namespace=$base_namespace" >> $GITHUB_OUTPUT
           echo "base_image_name=$base_image_name" >> $GITHUB_OUTPUT
@@ -74,7 +67,7 @@ jobs:
       - name: Log in to GHCR
         uses: docker/login-action@v2
         with:
-          registry: "ghcr.io"
+          registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -85,7 +78,7 @@ jobs:
           file: make/photon/prepare/Dockerfile.base
           platforms: linux/amd64
           push: true
-          tags: "${{ steps.build_args.outputs.base_image_name }}:v2.15.0"
+          tags: ${{ steps.build_args.outputs.base_image_name }}:v2.15.0
   
       - name: Build (and optionally push) the prepare image
         uses: docker/build-push-action@v4
@@ -94,10 +87,10 @@ jobs:
           file: make/photon/prepare/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: "${{ steps.vars.outputs.image_name }}:v2.15.0"
+          tags: ${{ steps.vars.outputs.image_name }}:v2.15.0
           build-args: |
-            harbor_base_image_version="v2.15.0"
-            harbor_base_namespace="${{ steps.build_args.outputs.base_namespace }}"
+            harbor_base_image_version=v2.15.0
+            harbor_base_namespace=${{ steps.build_args.outputs.base_namespace }}
 
       - name: Show result
         run: |
